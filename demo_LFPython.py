@@ -1,4 +1,4 @@
-from lfautom import spec
+from LFPython import spec
 import time
 import matplotlib.pyplot as pl
 

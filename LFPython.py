@@ -1,6 +1,3 @@
-"""
-@author: Max Wegerhoff based on Lukas Rieland's work
-"""
 import shutil
 import clr
 import os, glob, string
@@ -161,7 +158,6 @@ class spec():
     def cleanup(self):
         '''
         This method deletes the last measurement folder
-
         '''
 
         shutil.rmtree(self.folder)
@@ -169,7 +165,7 @@ class spec():
     def cleanup_rawdata(self):
         '''
         This method deletes everything in the last measurement folder except for the averaged csv data
-
+        (this saves a lot of space)
         '''
 
         for file in os.listdir(self.folder):
