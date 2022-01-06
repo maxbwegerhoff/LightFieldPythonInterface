@@ -18,11 +18,11 @@ and in the save data file tab:
 
 ## Step 2: Acquire spectra through python
 
-Everything else is handled by the python class. For a demo of the class have a look/try the demo: demo_lfautom.py
+Everything else is handled by the python class. For a demo of the class have a look/try the demo: demo_LFPython.py
 
 ```python
 
-from lfautom import spec
+from LFPython import spec
 import time
 import matplotlib.pyplot as pl
 
