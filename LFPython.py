@@ -65,7 +65,7 @@ class spec():
         self.intens_uptodate = False
         self.iter = 0
     
-    def update_folder_name(folder_name: string):
+    def update_folder_name(self, folder_name: string):
         '''
         This method updates the name of the folder in which the acquired spectrums are saved 
         and resets the measurement counter to 0 ()
@@ -89,9 +89,9 @@ class spec():
     def acquire(self, save_averaged_data = True):
         '''
         This method acquires a spectrum via lightfield and loads the wavelengths and intensities from the saved file.
-        Consecutive acquisations are labeled with numbers starting from 0 (measurement counter) and a timestamp
+        Consecutive acquisations are labelled with numbers starting from 0 (measurement counter) and a timestamp
 
-        :return: returns the wavelength and intensity data from the acquired spectrum
+        :return: returns the x-pixel, wavelength and intensity data from the acquired spectrum
         '''
         timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
         
