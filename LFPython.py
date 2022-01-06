@@ -29,8 +29,6 @@ from PrincetonInstruments.LightField.AddIns import ExperimentSettings
 
 acquireCompleted = AutoResetEvent(False)
 def experiment_completed(sender, event_args):
-        #This function hooks a listener to the aquisition, meaning calling this function later
-        #allows to wait for the aquistion to finish before the protocoll continous.
         acquireCompleted.Set()
 
 class spec():
