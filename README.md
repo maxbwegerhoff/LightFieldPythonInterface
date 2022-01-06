@@ -16,5 +16,43 @@ and in the save data file tab:
 
 <img src="screenshots/prerequisites__save_data_file_settings.jpg">
 
-Everything else is handled by the python class. For a demo of the class have a look in demo_lfautom.py
+Everything else is handled by the python class. For a demo of the class have a look/try the demo: demo_lfautom.py
 
+```python
+
+from lfautom import spec
+import time
+import matplotlib.pyplot as pl
+
+spec = spec(experiment_name = 'HRS500MS_Pixis100_test', folder_name = 'test')
+#wait some time before starting the acquisition (this is just optional)
+time.sleep(10)
+
+#take 5 spectra in a row
+for i in range(5):
+    x, wl, inten = spec.acquire()
+    pl.plot(x, inten, label = f'{i}')
+
+
+pl.legend()
+pl.show()
+
+#to delete all the recorded data in the last used folder use:
+#spec.cleanup()
+
+#to delete all the data except the averaged data use:
+#spec.cleanup_rawdata()
+```
+
+The most important commands are:
+```python
+spec = spec(experiment_name = 'HRS500MS_Pixis100_test', folder_name = 'test')
+```
+to initialize the class based on the lightfield experiment. The data is then saved in a folder which contains a time stamp and the ```python folder_name```.
+
+Calling
+
+```python
+spec.acquire()
+```
+acquires a spectrum and returns the pixel indices + corresponding wavelengths and intensities.
