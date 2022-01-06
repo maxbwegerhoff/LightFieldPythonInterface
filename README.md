@@ -16,6 +16,8 @@ and in the save data file tab:
 
 <img src="screenshots/prerequisites__save_data_file_settings.jpg">
 
+## Step 2: Acquire spectra through python
+
 Everything else is handled by the python class. For a demo of the class have a look/try the demo: demo_lfautom.py
 
 ```python
