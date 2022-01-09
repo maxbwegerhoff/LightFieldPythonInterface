@@ -127,6 +127,7 @@ class spec():
         '''
         if self.xpixels is None:
             self.acquire()
+            return self.xpixels
         else:
             return self.xpixels
 
@@ -138,6 +139,7 @@ class spec():
         '''
         if self.wlengths is None:
             self.acquire()
+            return self.wlengths
         else:
             return self.wlengths
 
@@ -149,13 +151,15 @@ class spec():
         '''
         if self.intens_uptodate is False:
             self.acquire()
+            return self.intens
         else:
             self.intens_uptodate = False
             return self.intens
 
     def cleanup(self):
         '''
-        This method deletes the last measurement folder
+        This method deletes the last measurement folder. In order to continue measuring use update_folder_name to create a new folder.
+        Otherwise the program will crash, since Lightfield will try to save the acquired spectra in a non-existing folder.
         '''
 
         shutil.rmtree(self.folder)
