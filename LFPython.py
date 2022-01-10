@@ -32,7 +32,7 @@ def experiment_completed(sender, event_args):
         acquireCompleted.Set()
 
 class spec():
-    def __init__(self, experiment_name : string, folder_name : string = 'temp'):
+    def __init__(self, experiment_name : str, folder_name : str = 'temp'):
         """
         This class aims to serve as an interface between data acquisition in lightfield and python. Spectra can be acquired, saved as files and returned in python. Spectra are saved to a folder which always contains a timestamp and a folder name which can be chosen by the user.
         Spectra are saved in this folder (as csv and spe) and also saved with a timestamp and an ascending measurement counter starting from 0.
@@ -63,7 +63,7 @@ class spec():
         self.intens_uptodate = False
         self.iter = 0
     
-    def update_folder_name(self, folder_name: string):
+    def update_folder_name(self, folder_name: str):
         '''
         This method updates the name of the folder in which the acquired spectrums are saved 
         and resets the measurement counter to 0 ()
