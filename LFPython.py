@@ -51,7 +51,7 @@ class spec():
 
         cur_dir = os.path.abspath(os.path.dirname(__file__))
         timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        self.folder = os.path.join(cur_dir, f'{timestamp}_{folder_name}')
+        self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
         if not os.path.exists(self.folder):
                     os.makedirs(self.folder)
         self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
@@ -63,20 +63,28 @@ class spec():
         self.intens_uptodate = False
         self.iter = 0
     
-    def update_folder_name(self, folder_name: str):
+    def update_folder_name(self, folder_name: str, add_time: bool = True):
         '''
         This method updates the name of the folder in which the acquired spectrums are saved 
         and resets the measurement counter to 0 ()
 
         :param: folder_name: string: name of the folder
+        :param: timestamp: bool: If true a timestamp is added to the front of the folder name
 
         :return: returns the  absolute path to the folder
         '''
         cur_dir = os.path.abspath(os.path.dirname(__file__))
-        timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        self.folder = os.path.join(cur_dir, f'{timestamp}_{folder_name}')
+        if add_time:
+            timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+            self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
+        else:
+            self.folder = os.path.join(cur_dir, f'{folder_name}')
+
         if not os.path.exists(self.folder):
-                    os.makedirs(self.folder)
+            os.makedirs(self.folder)
+        else:
+            print('Folder already exists; choose different folder name')
+
         self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
 
         self.iter = 0
@@ -84,21 +92,31 @@ class spec():
         return self.folder
 
     
-    def acquire(self, save_averaged_data = True):
+    def acquire(self, save_averaged_data = True, file_name: str = None, add_time: bool = True):
         '''
         This method acquires a spectrum via lightfield and loads the wavelengths and intensities from the saved file.
-        Consecutive acquisations are labelled with numbers starting from 0 (measurement counter) and a timestamp
+        Consecutive acquisations are labelled with numbers starting from 0 (measurement counter) and a timestamp in the default setting.
+        Alternatively one can choose a custom file_name; in this case one has to be cautious to choose a new file name for every acquisition.
 
-        :return: returns the x-pixel, wavelength and intensity data from the acquired spectrum
+        :param: save_averaged_data: bool: If True, the averaged data (frames and columns are averaged) is saved to a csv file
+        :param: file_name: str: If given, the data will be saved with this file name with the option to add a time stamp to the front.
+        :param: add_time: bool: If file_name is given and add_time is True, a time stamp will be added to the front of the custom file_name
+
+        :return: returns the x-pixel, wavelength and intensity data from the acquired spectrum. The data is averaged over the acquired frames and pixel-columns.
         '''
         timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+        if file_name is not None:
+            if add_time:
+                file_name = f'{timestamp}__{file_name}'
+        elif file_name is None:
+            file_name = f'{timestamp}__{self.iter}'        
         
-        self.experiment.SetValue(ExperimentSettings.FileNameGenerationBaseFileName,f'{timestamp}_{self.iter}')
+        self.experiment.SetValue(ExperimentSettings.FileNameGenerationBaseFileName,file_name)
         self.experiment.Acquire()
         acquireCompleted.WaitOne()
                
         #load in last acquired data and save it to self.wlenghts and self.intens
-        data = np.loadtxt(os.path.join(self.folder, f'{timestamp}_{self.iter}.csv'), delimiter = ',')
+        data = np.loadtxt(os.path.join(self.folder, f'{file_name}.csv'), delimiter = ',')
         #load into pandas to average over the frames and columns
         data = pd.DataFrame(data)
 
@@ -111,11 +129,10 @@ class spec():
         data_wlengths = data.groupby(3)[4].mean()
         self.wlengths = data_wlengths.keys().to_numpy()
 
-        self.intens_uptodate = True
-        
+        self.intens_uptodate = True        
 
         if save_averaged_data:
-            np.savetxt(os.path.join(self.folder, f'{timestamp}_{self.iter}_av.csv'), np.column_stack([self.xpixels, self.wlengths, self.intens]), delimiter=',')
+            np.savetxt(os.path.join(self.folder, f'{file_name}_av.csv'), np.column_stack([self.xpixels, self.wlengths, self.intens]), delimiter=',')
         self.iter += 1
         return (self.xpixels, self.wlengths, self.intens)
     
