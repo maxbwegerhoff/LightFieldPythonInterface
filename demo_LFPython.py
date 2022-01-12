@@ -40,3 +40,5 @@ pl.show()
 #delete all the data except for the averaged data
 spec.cleanup_rawdata()
 
+
+
