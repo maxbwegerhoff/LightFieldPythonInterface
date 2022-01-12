@@ -32,7 +32,7 @@ def experiment_completed(sender, event_args):
         acquireCompleted.Set()
 
 class spec():
-    def __init__(self, experiment_name : str, folder_name : str = 'temp'):
+    def __init__(self, experiment_name : str, folder_name : str = 'temp', add_time: bool = True, init_folder_path = None:
         """
         This class aims to serve as an interface between data acquisition in lightfield and python. Spectra can be acquired, saved as files and returned in python. Spectra are saved to a folder which always contains a timestamp and a folder name which can be chosen by the user.
         Spectra are saved in this folder (as csv and spe) and also saved with a timestamp and an ascending measurement counter starting from 0.
@@ -42,19 +42,32 @@ class spec():
         
         :param: experiment_name: string: name of the lightfield experiment that one wants to use (requires a camera)
         :param: folder_name: string: name of the folder where the spectra are saved
+        :param: add_time: bool: If true a timestamp is added to the front of the folder name
+        :param: init_folder:  If not None, the spectra will be saved to this given **path** (so using this argument one has to make sure that the
+        path works for the given operating system and so on)
         """           
         auto = Automation(True, List[String]())
         self.experiment = auto.LightFieldApplication.Experiment        
 
         self.experiment.Load(experiment_name) #This is the name of the 'experiment'/device combination created in Lightfield
         self.experiment.ExperimentCompleted += experiment_completed
+        if init_folder is not None:
+            cur_dir = os.path.abspath(os.path.dirname(__file__))
+            if add_time:
+                timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+                self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
+            else:
+                self.folder = os.path.join(cur_dir, f'{folder_name}')
 
-        cur_dir = os.path.abspath(os.path.dirname(__file__))
-        timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-        self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
-        if not os.path.exists(self.folder):
-                    os.makedirs(self.folder)
-        self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
+            if not os.path.exists(self.folder):
+                os.makedirs(self.folder)
+            else:
+                print('Folder already exists; choose different folder name')
+
+            self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
+        else:
+            self.folder = init_folder_path
+            self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
 
         self.xpixels = None
         self.wlengths = None
@@ -62,14 +75,14 @@ class spec():
 
         self.intens_uptodate = False
         self.iter = 0
-    
+
     def update_folder_name(self, folder_name: str, add_time: bool = True):
         '''
         This method updates the name of the folder in which the acquired spectrums are saved 
         and resets the measurement counter to 0 ()
 
         :param: folder_name: string: name of the folder
-        :param: timestamp: bool: If true a timestamp is added to the front of the folder name
+        :param: add_time: bool: If true a timestamp is added to the front of the folder name
 
         :return: returns the  absolute path to the folder
         '''
@@ -91,7 +104,6 @@ class spec():
 
         return self.folder
 
-    
     def acquire(self, save_averaged_data = True, file_name: str = None, add_time: bool = True):
         '''
         This method acquires a spectrum via lightfield and loads the wavelengths and intensities from the saved file.
