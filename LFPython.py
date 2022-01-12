@@ -51,7 +51,7 @@ class spec():
 
         self.experiment.Load(experiment_name) #This is the name of the 'experiment'/device combination created in Lightfield
         self.experiment.ExperimentCompleted += experiment_completed
-        if init_folder is not None:
+        if init_folder is None:
             cur_dir = os.path.abspath(os.path.dirname(__file__))
             if add_time:
                 timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
