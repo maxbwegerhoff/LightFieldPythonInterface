@@ -185,6 +185,15 @@ class spec():
             self.intens_uptodate = False
             return self.intens
 
+    def set_exposure(self, timeinms):
+        '''
+        This method sets the exposure time for the acquisition in lightfield
+
+        :return: exposure time
+        '''
+        self.experiment.SetValue(CameraSettings.ShutterTimingExposureTime,timeinms)
+        return timeinms
+
     def cleanup(self):
         '''
         This method deletes the last measurement folder. In order to continue measuring use update_folder_name to create a new folder.
