@@ -76,7 +76,7 @@ class spec():
         self.intens_uptodate = False
         self.iter = 0
 
-    def update_folder_name(self, folder_name: str, add_time: bool = True):
+    def update_folder_name(self, folder_name: str = None, add_time: bool = True, folder_path: str = None):
         '''
         This method updates the name of the folder in which the acquired spectrums are saved 
         and resets the measurement counter to 0 ()
@@ -86,17 +86,20 @@ class spec():
 
         :return: returns the  absolute path to the folder
         '''
-        cur_dir = os.path.abspath(os.path.dirname(__file__))
-        if add_time:
-            timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-            self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
+        if folder_path is not None:
+            self.folder = folder_path
         else:
-            self.folder = os.path.join(cur_dir, f'{folder_name}')
+            cur_dir = os.path.abspath(os.path.dirname(__file__))
+            if add_time:
+                timestamp=datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+                self.folder = os.path.join(cur_dir, f'{timestamp}__{folder_name}')
+            else:
+                self.folder = os.path.join(cur_dir, f'{folder_name}')
 
-        if not os.path.exists(self.folder):
-            os.makedirs(self.folder)
-        else:
-            print('Folder already exists; choose different folder name')
+            if not os.path.exists(self.folder):
+                os.makedirs(self.folder)
+            else:
+                print('Folder already exists; choose different folder name')
 
         self.experiment.SetValue(ExperimentSettings.FileNameGenerationDirectory, self.folder)
 
@@ -194,6 +197,98 @@ class spec():
         self.experiment.SetValue(CameraSettings.ShutterTimingExposureTime,timeinms)
         return timeinms
 
+    def autoset_exposure(self, maxcounts: int = 30000):
+        '''
+        This method automatically sets the exposure time to reach a maximum amount of counts in the spectrum. 
+        If subsequent acquisitions are similar in intensity, this can be useful to automatically set an exposure time that does not sature the camera.
+
+        :return: exposure time
+        '''
+        counter = 0
+        file_name = f'autoset_exposure_{counter}'
+        #start with 1 ms
+        exposure = 1
+        self.set_exposure(exposure)
+        self.set_exposures_per_frame(num = 1)
+        p, wvl, inten = self.acquire(file_name = file_name, add_time = False)
+        peak = np.max(inten)
+        diff = (maxcounts - peak) / maxcounts
+        factor = maxcounts / peak
+
+        while np.abs(diff) > 0.05:
+            #print(factor)
+            counter += 1
+            file_name = f'autoset_exposure_{counter}'
+            exposure = int(exposure * factor*1000) / 1000
+            #print(exposure)
+            self.set_exposure(exposure)
+
+            p, wvl, inten = self.acquire(file_name = file_name, add_time = False)
+            peak = np.max(inten)
+            diff = (maxcounts - peak) / maxcounts
+            factor = maxcounts / peak
+        
+        print(f'Exposure time set to {exposure} ms for max counts of {maxcounts}')
+
+        return exposure
+    
+    def set_exposures_per_frame(self, num: int, method: str = 'Sum'):
+        '''
+        This method sets the number of exposures that are summed up or averaged for each frame
+
+        Possible values for method are 'Sum' and 'Average'
+
+        :return: number of exposures
+        '''
+        if num > 1:
+            self.experiment.SetValue(ExperimentSettings.OnlineProcessingFrameCombinationMethod,method)
+        self.experiment.SetValue(ExperimentSettings.OnlineProcessingFrameCombinationFramesCombined,num)
+        
+        return num
+    
+    def autoset_exposures_per_frame(self, countsperbin: int):
+        '''
+        This method automatically sets the number of exposures per frame to achieve a specified average amount of counts per bin (in most cases a single pixel).
+        By using this method, one can always acquire data which has similar counting statistics, even if the intensity varies.
+
+        :return: set number of exposures
+        '''
+        file_name = f'autoset_exposures_per_frame'
+
+        self.set_exposures_per_frame(num = 10, method = 'Sum')
+        p, wvl, inten = self.acquire(file_name = file_name, add_time = False)
+
+        av_counts = np.mean(inten)
+
+        new_num = int(np.ceil(10 * countsperbin / av_counts))
+
+        self.set_exposures_per_frame(num = new_num, method = 'Sum')
+
+        print(f'Exposures per frame set to {new_num} to achieve average counts of {countsperbin} per bin')
+
+        return new_num
+
+    def set_number_of_frames(self, num_frames):
+        '''
+        This method sets the number of frames to be acquired in lightfield
+
+        :return: number of frames
+        '''
+        self.experiment.SetValue(ExperimentSettings.AcquisitionFramesToStore, num_frames)
+
+        return num_frames
+    
+    def get_framerate(self):
+        '''
+        This method returns the framerate of the acquisition for the current settings. 
+        This is useful to estimate the time that a measurement will take.
+
+        :return: framerate
+        '''
+
+        return self.experiment.GetValue(CameraSettings.AcquisitionFrameRate)
+
+
     def cleanup(self):
         '''
         This method deletes the last measurement folder. In order to continue measuring use update_folder_name to create a new folder.
@@ -210,4 +305,14 @@ class spec():
 
         for file in os.listdir(self.folder):
             if file[-6:] != 'av.csv':
+                os.remove(os.path.join(self.folder, file))
+    
+    def cleanup_allspectra(self):
+        '''
+        This method deletes all files of type .csv and .spe (which are usually the acquired spectra) in the current measurement folder.
+        This can be useful if all the spectra were already saved in for example a npy binary file, such that the individual saved spectra are not necessary anymore.
+        '''
+
+        for file in os.listdir(self.folder):
+            if '.csv' in file or '.spe' in file:
                 os.remove(os.path.join(self.folder, file))
